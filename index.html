@@ -119,6 +119,27 @@ button{font-family:inherit;cursor:pointer;}
 
 ::-webkit-scrollbar{width:6px;}
 ::-webkit-scrollbar-thumb{background:#3a3f4c;border-radius:3px;}
+
+/* ---- responsive: stack columns below desktop width ---- */
+@media (max-width: 900px){
+  #app{flex-direction:column;max-width:100%;}
+  .sidebar,.rightbar{width:100%;flex:none;border:none;border-bottom:1px solid var(--line);padding:12px;}
+  .sidebar{position:sticky;top:0;background:var(--panel);z-index:5;}
+  .brand{padding-bottom:8px;}
+  .sidebar > div{display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
+  .navgroup-label{width:100%;margin:6px 0 0 0;}
+  .navbtn{width:auto;flex:0 0 auto;padding:6px 10px;gap:6px;}
+  .navbtn .lvl{margin-left:2px;}
+  .main{padding:14px;}
+  .rightbar{border-top:1px solid var(--line);}
+  .shop-grid{grid-template-columns:1fr;}
+  .action-row{flex-wrap:wrap;}
+}
+@media (max-width: 480px){
+  .brand{font-size:17px;}
+  .section-title{font-size:17px;}
+  .action-name{font-size:13px;}
+}
 </style>
 </head>
 <body>
@@ -341,15 +362,16 @@ function toolBonus(kind){
 
 /* ============= GAME TICK ============= */
 let lastTick=performance.now();
+let lastRender=0;
+const RENDER_INTERVAL=120; // ms — smooth enough for progress bars, far cheaper than 60fps full rebuilds
+
 function gameTick(now){
   const dt=now-lastTick; lastTick=now;
 
   // stun overrides everything in the thieving loop
-  if(state.action && state.action.type==='thieve' && now<state.stunUntil){
-    render(); requestAnimationFrame(gameTick); return;
-  }
+  const stunned = state.action && state.action.type==='thieve' && now<state.stunUntil;
 
-  if(state.action){
+  if(!stunned && state.action){
     state.action.elapsed+=dt;
     const def=getActionDef(state.action);
     if(def && state.action.elapsed>=def.time){
@@ -366,7 +388,10 @@ function gameTick(now){
     }
   }
 
-  render();
+  if(now-lastRender>=RENDER_INTERVAL){
+    lastRender=now;
+    render();
+  }
   requestAnimationFrame(gameTick);
 }
 
